@@ -35,6 +35,7 @@ var (
 	PasswordCheckPwn                   bool
 	SuccessfulTokensCacheSize          int
 	DisableQueryAuthToken              bool
+	EnforceTwoFactorAuth               bool
 	CSRFCookieName                     = "_csrf"
 	CSRFCookieHTTPOnly                 = true
 )
@@ -139,6 +140,7 @@ func loadSecurityFrom(rootCfg ConfigProvider) {
 	CSRFCookieHTTPOnly = sec.Key("CSRF_COOKIE_HTTP_ONLY").MustBool(true)
 	PasswordCheckPwn = sec.Key("PASSWORD_CHECK_PWN").MustBool(false)
 	SuccessfulTokensCacheSize = sec.Key("SUCCESSFUL_TOKENS_CACHE_SIZE").MustInt(20)
+	EnforceTwoFactorAuth = sec.Key("ENFORCE_TWO_FACTOR_AUTH").MustBool(true)
 
 	InternalToken = loadSecret(sec, "INTERNAL_TOKEN_URI", "INTERNAL_TOKEN")
 	if InstallLock && InternalToken == "" {
