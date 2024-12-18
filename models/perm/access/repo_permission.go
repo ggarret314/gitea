@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 	"slices"
-
+	"code.gitea.io/gitea/models/auth"
 	"code.gitea.io/gitea/models/db"
 	"code.gitea.io/gitea/models/organization"
 	perm_model "code.gitea.io/gitea/models/perm"
@@ -15,6 +15,7 @@ import (
 	"code.gitea.io/gitea/models/unit"
 	user_model "code.gitea.io/gitea/models/user"
 	"code.gitea.io/gitea/modules/log"
+	"code.gitea.io/gitea/modules/setting"
 	"code.gitea.io/gitea/modules/util"
 )
 
@@ -210,6 +211,13 @@ func GetUserRepoPermission(ctx context.Context, repo *repo_model.Repository, use
 	if user == nil && repo.IsPrivate {
 		perm.AccessMode = perm_model.AccessModeNone
 		return perm, nil
+	}
+
+	if user != nil && setting.EnforceTwoFactorAuth {
+		if twoFactor, _ := auth.GetTwoFactorByUID(ctx, user.ID); twoFactor == nil {
+			perm.AccessMode = perm_model.AccessModeNone
+			return
+		}
 	}
 
 	var isCollaborator bool

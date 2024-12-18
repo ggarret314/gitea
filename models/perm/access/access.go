@@ -7,13 +7,13 @@ package access
 import (
 	"context"
 	"fmt"
-
+	"code.gitea.io/gitea/models/auth"
 	"code.gitea.io/gitea/models/db"
 	"code.gitea.io/gitea/models/organization"
 	"code.gitea.io/gitea/models/perm"
 	repo_model "code.gitea.io/gitea/models/repo"
 	user_model "code.gitea.io/gitea/models/user"
-
+	"code.gitea.io/gitea/modules/setting"
 	"xorm.io/builder"
 )
 
@@ -37,6 +37,11 @@ func accessLevel(ctx context.Context, user *user_model.User, repo *repo_model.Re
 	restricted := false
 
 	if user != nil {
+		if setting.EnforceTwoFactorAuth {
+			if twoFactor, _ := auth.GetTwoFactorByUID(ctx, user.ID); twoFactor == nil {
+				return perm.AccessModeNone, nil
+			}
+		}
 		userID = user.ID
 		restricted = user.IsRestricted
 	}
