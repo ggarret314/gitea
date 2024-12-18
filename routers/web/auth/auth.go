@@ -94,6 +94,12 @@ func autoSignIn(ctx *context.Context) (bool, error) {
 		return false, fmt.Errorf("unable to updateSession: %w", err)
 	}
 
+	if twofa, _ := auth.GetTwoFactorByUID(ctx, u.ID); twofa != nil {
+		if err := ctx.Session.Set("twofaAuthed", true); err != nil {
+			return false, err
+		}
+	}
+
 	if err := resetLocale(ctx, u); err != nil {
 		return false, err
 	}
@@ -324,6 +330,8 @@ func handleSignInFull(ctx *context.Context, u *user_model.User, remember, obeyRe
 		ctx.SetSiteCookie(setting.CookieRememberName, nt.ID+":"+token, setting.LogInRememberDays*timeutil.Day)
 	}
 
+	isTwofaAuthed := ctx.Session.Get("twofaUid") != nil
+
 	if err := updateSession(ctx, []string{
 		// Delete the openid, 2fa and linkaccount data
 		"openid_verified_uri",
@@ -339,6 +347,12 @@ func handleSignInFull(ctx *context.Context, u *user_model.User, remember, obeyRe
 	}); err != nil {
 		ctx.ServerError("RegenerateSession", err)
 		return setting.AppSubURL + "/"
+	}
+
+	if isTwofaAuthed {
+		if err := ctx.Session.Set("twofaAuthed", true); err != nil {
+			log.Error("Error setting %s session: %v", "twofaAuthed", err)
+		}
 	}
 
 	// Language setting of the user overwrites the one previously set
